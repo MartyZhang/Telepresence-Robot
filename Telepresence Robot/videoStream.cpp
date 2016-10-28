@@ -22,7 +22,7 @@ using namespace std;
 int main(int, char**)
 {
     //new remapping matrices and variables to store settings
-    Mat map1, map2, newCamMat, cameraMatrix, distCoeffs;
+    Mat map1, map2, newCamMat, cameraMatrix, distCoeffs, pano, mappedFrame1, mappedFrame2;
     
     //config file constants
     std::string filename = "out_camera_data.xml";
@@ -34,26 +34,21 @@ int main(int, char**)
     	cout <<  "Can't find camera 1" << endl;
         return -1;
     }
-
+    //setup camera 1
     cap.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
-    cap.set(CV_CAP_PROP_FPS, 30);
 	
-    VideoCapture cap1(1); // open camera 2
+    VideoCapture cap1(2); // open camera 2
     if(!cap1.isOpened()) {
         cout <<  "Can't find camera 2" << endl;
         return -1;
     }
-
+    //setup camera 2
     cap1.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
     cap1.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
-    cap1.set(CV_CAP_PROP_FPS, 30);
 
     //declare video windows
     namedWindow("view1",1);
-    resizeWindow("view1", 1280, 720);
-    namedWindow("view2",1);
-    resizeWindow("view2", 1280, 720);
 
     //get size, both cameras same dimensions
     Mat view;
@@ -75,40 +70,41 @@ int main(int, char**)
                                              CV_16SC2, map1, map2);
     //initialize sticher
     Mat s1, s2, r1, r2;
-    std::vector<Mat> images(2);
-    for(int i = 0; i < 2;i++) {
-        images.push_back(Mat());
-    }
+    cv::Rect myROI;
+    myROI.x = 80;
+    myROI.y = 170;
+    myROI.width = imageSize.width - 2*80;
+    myROI.height = imageSize.height - 2*170;
+    vector<Mat> images(2);
+    //initialize vector
     bool try_use_gpu = true;    // use GPU
-    cv::Stitcher stitcher = cv::Stitcher::createDefault(!try_use_gpu);
-    cv::Stitcher::Status status;
-    cap >> s1; 
-    cap1 >> s2;
-    remap(s1, r1, map1, map2, INTER_LINEAR);
-    remap(s2, r1, map1, map2, INTER_LINEAR);
-    images[0] = r1;
-    images[1] = r2;
-    status = stitcher.estimateTransform(images);
-    if (status != cv::Stitcher::OK) {
-        cout << "Can't stitcher.estimateTransform, error code = " << status << endl;  
-        return -1;
-    }
+    Stitcher stitcher = Stitcher::createDefault(try_use_gpu);
+    std::vector<cv::detail::CameraParams> cams;
+    Stitcher::Status status;
+    bool has_transform = false;
 
     for(;;)
     {
-        Mat frame1, frame2, mappedFrame1, mappedFrame2, pano;
-        cap >> frame1; 
-        cap1 >> frame2;
-        remap(frame1, mappedFrame1, map1, map2, INTER_LINEAR);
-        remap(frame2, mappedFrame1, map1, map2, INTER_LINEAR);
-        images[0] = mappedFrame1;
-        images[1] = mappedFrame2;
-        imshow("view1", mappedFrame1);
-        imshow("view2", mappedFrame2);
-        status = stitcher.composePanorama(images, pano);
+        cap >> s1; 
+        cap1 >> s2;
+        remap(s1, mappedFrame1, map1, map2, INTER_LINEAR);
+        remap(s2, mappedFrame2, map1, map2, INTER_LINEAR);
+        images[0] = mappedFrame1(myROI);
+        images[1] = mappedFrame2(myROI);
+
+        // if( !has_transform ) {
+        //     status = stitcher.estimateTransform(images);
+        //     has_transform = true;
+        //     cout << "estimated transform" << endl;
+        //     cams = stitcher.cameras();
+        // } 
+        // stitcher.setCameras(cams);
+        // status = stitcher.composePanorama(images, pano);   
+        stitcher.stitch( images, pano );     
+        imshow("view1", pano);
         if(waitKey(1) >= 0) break;
     }
-    // the camera will be deinitialized automatically in VideoCapture destructor
+
     return 0;
 }
 

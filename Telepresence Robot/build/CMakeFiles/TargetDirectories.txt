@@ -1,0 +1,3 @@
+/Users/Martin/Documents/U4 Winter/DP2/Telepresence Robot/build/CMakeFiles/edit_cache.dir
+/Users/Martin/Documents/U4 Winter/DP2/Telepresence Robot/build/CMakeFiles/rebuild_cache.dir
+/Users/Martin/Documents/U4 Winter/DP2/Telepresence Robot/build/CMakeFiles/videoStreamer.dir
