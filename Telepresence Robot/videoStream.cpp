@@ -5,18 +5,19 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "PracticalSocket.h" // For UDPSocket and SocketException
+// For UDPSocket and SocketException
+#include "PracticalSocket.h"
 #include "config.h"
+
+// Stitching
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/stitching/stitcher.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
-// #include <opencv2/core/types.hpp>
 #include <opencv2/core/mat.hpp>
-// #include <opencv2/core/utility.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/calib3d.hpp>
-// #include <opencv2/imgcodecs.hpp>
-// #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/stitching.hpp>
 
@@ -89,6 +90,9 @@ int main(int argc, char * argv[]) {
     roi.x = x;
     roi.y = y;
 
+    Mat pano;
+    Stitcher stitcher = Stitcher::createDefault(true); // create a Stitcher object
+
     try {
         UDPSocket sock;
         int jpegqual =  ENCODE_QUALITY; // Compression Parameter
@@ -104,46 +108,52 @@ int main(int argc, char * argv[]) {
             roi.height = edges.size().height - (y*2);
             cv::Mat edges_cropped = edges(roi);
             cv::Mat edges_cropped1 = edges1(roi);
+            
+            // /* Send camera 0 over socket */
+            // vector < int > compression_params;
+            // compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+            // compression_params.push_back(jpegqual);
+            // imencode(".jpg", edges_cropped, encoded, compression_params);
+            // int total_pack = 1 + (encoded.size() - 1) / PACK_SIZE;
+            // int ibuf[1];
+            // ibuf[0] = total_pack;
+            // sock.sendTo(ibuf, sizeof(int), servAddress, servPort0);
 
-            /* Send camera 0 over socket */
-            vector < int > compression_params;
-            compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params.push_back(jpegqual);
-            imencode(".jpg", edges_cropped, encoded, compression_params);
-            int total_pack = 1 + (encoded.size() - 1) / PACK_SIZE;
-            int ibuf[1];
-            ibuf[0] = total_pack;
-            sock.sendTo(ibuf, sizeof(int), servAddress, servPort0);
+            // for (int i = 0; i < total_pack; i++)
+            //     sock.sendTo( & encoded[i * PACK_SIZE], PACK_SIZE, servAddress, servPort0);
 
-            for (int i = 0; i < total_pack; i++)
-                sock.sendTo( & encoded[i * PACK_SIZE], PACK_SIZE, servAddress, servPort0);
+            // waitKey(FRAME_INTERVAL);
 
-            waitKey(FRAME_INTERVAL);
+            // clock_t next_cycle = clock();
+            // double duration = (next_cycle - last_cycle) / (double) CLOCKS_PER_SEC;
+            // cout << "\teffective FPS:" << (1 / duration) << " \tkbps:" << (PACK_SIZE * total_pack / duration / 1024 * 8) << endl;
 
-            clock_t next_cycle = clock();
-            double duration = (next_cycle - last_cycle) / (double) CLOCKS_PER_SEC;
-            cout << "\teffective FPS:" << (1 / duration) << " \tkbps:" << (PACK_SIZE * total_pack / duration / 1024 * 8) << endl;
+            // cout << next_cycle - last_cycle;
+            // last_cycle = next_cycle;
 
-            cout << next_cycle - last_cycle;
-            last_cycle = next_cycle;
+            // /* Send camera 1 over socket */
+            // vector < int > compression_params1;
+            // compression_params1.push_back(CV_IMWRITE_JPEG_QUALITY);
+            // compression_params1.push_back(jpegqual);
+            // imencode(".jpg", edges_cropped1, encoded1, compression_params1);
+            // int total_pack1 = 1 + (encoded1.size() - 1) / PACK_SIZE;
+            // int ibuf1[1];
+            // ibuf1[0] = total_pack1;
+            // sock.sendTo(ibuf1, sizeof(int), servAddress, servPort1);
 
-            /* Send camera 1 over socket */
-            vector < int > compression_params1;
-            compression_params1.push_back(CV_IMWRITE_JPEG_QUALITY);
-            compression_params1.push_back(jpegqual);
-            imencode(".jpg", edges_cropped1, encoded1, compression_params1);
-            int total_pack1 = 1 + (encoded1.size() - 1) / PACK_SIZE;
-            int ibuf1[1];
-            ibuf1[0] = total_pack1;
-            sock.sendTo(ibuf1, sizeof(int), servAddress, servPort1);
+            // for (int i = 0; i < total_pack1; i++)
+            //     sock.sendTo( & encoded1[i * PACK_SIZE], PACK_SIZE, servAddress, servPort1);
 
-            for (int i = 0; i < total_pack1; i++)
-                sock.sendTo( & encoded1[i * PACK_SIZE], PACK_SIZE, servAddress, servPort1);
+            // waitKey(FRAME_INTERVAL);
 
-            waitKey(FRAME_INTERVAL);
+            // cout << next_cycle - last_cycle;
+            // last_cycle = next_cycle;
 
-            cout << next_cycle - last_cycle;
-            last_cycle = next_cycle;
+            vector<Mat> imgs;
+            imgs.push_back(edges);
+            imgs.push_back(edges1);
+            Stitcher::Status status = stitcher.stitch(imgs, pano); // stitch the input images together
+            imshow("Pano", pano);
 
             // imshow("Camera 0", edges_cropped);
             // imshow("Camera 1", edges_cropped1);

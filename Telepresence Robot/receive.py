@@ -1,3 +1,4 @@
+# Streaming
 import socket
 import numpy
 import time
@@ -5,6 +6,12 @@ import cv2
 import sys
 import struct
 import thread
+
+# Stitching
+from panorama import Stitcher
+import argparse
+import imutils
+import cv2
 
 UDP_IP = "127.0.0.1"
 UDP_PORT_0 = 10000
@@ -56,14 +63,22 @@ try:
 except:
    print "Error: unable to start thread"
 
+# stitch the images together to create a panorama
+stitcher = Stitcher()
+
 while True:
-    if global_img_0 is not None:
-        cv2.imshow('frame 0', global_img_0)
-        if cv2.waitKey(1) & 0xFF == ord ('q'):
-            break
-    if global_img_1 is not None:
-        img_1 = cv2.imdecode(global_img_1, 1)
-        cv2.imshow('frame 1', global_img_1)
+    # if global_img_0 is not None:
+    #     cv2.imshow('frame 0', global_img_0)
+    #     if cv2.waitKey(1) & 0xFF == ord ('q'):
+    #         break
+    # if global_img_1 is not None:
+    #     img_1 = cv2.imdecode(global_img_1, 1)
+    #     cv2.imshow('frame 1', global_img_1)
+    #     if cv2.waitKey(1) & 0xFF == ord ('q'):
+    #         break
+    if global_img_0 is not None and global_img_1 is not None:
+        result = stitcher.stitch([global_img_0, global_img_1], showMatches=False)
+        cv2.imshow("Result", result)
         if cv2.waitKey(1) & 0xFF == ord ('q'):
             break
 
