@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response 
 from camera import VideoCamera
 
 app = Flask(__name__)
@@ -27,4 +27,4 @@ def fallback(dummy):
     return 'This one catches everything else'
 
 if __name__ == '__main__':
-    app.run(host='142.157.38.253', debug=True)
+    app.run(host='0.0.0.0', debug=True)

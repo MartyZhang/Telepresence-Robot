@@ -9,6 +9,10 @@ class VideoCamera(object):
         # If you decide to use video.mp4, you must have this file in the folder
         # as the main.py.
         # self.video = cv2.VideoCapture('video.mp4')
+	
+	# Set the resolution reference: http://stackoverflow.com/questions/11420748/setting-camera-parameters-in-opencv-python
+	self.video.set(3,1920)
+	self.video.set(4,1080)
     
     def __del__(self):
         self.video.release()
@@ -19,4 +23,4 @@ class VideoCamera(object):
         # so we must encode it into JPEG in order to correctly display the
         # video stream.
         ret, jpeg = cv2.imencode('.jpg', image)
-        return jpeg.tobytes()
+        return jpeg.tostring()
